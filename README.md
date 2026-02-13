@@ -81,6 +81,38 @@ Certain values can be set via environment variables, using the `-e` parameter on
 * __LOGLEVEL__: Log level, can be set to `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`, or `NONE`. Defaults to `INFO`. 
 * __ENABLE_ACCESSLOG__: Whether to enable access log. Defaults to `false`.
 
+### ðŸ” Authentication & Users
+
+* __ENABLE_AUTH__: Enables built-in username/password authentication. Defaults to `false`.
+* __AUTH_USERS_FILE__: Path to a JSON file where users are stored. Defaults to `STATE_DIR/users.json`.
+* __AUTH_ADMIN_USERNAME__: Initial admin username used only when `AUTH_USERS_FILE` does not already contain users.
+* __AUTH_ADMIN_PASSWORD__: Initial admin password used only when `AUTH_USERS_FILE` does not already contain users.
+* __AUTH_SESSION_SECRET__: Secret used to sign login session cookies. If omitted, a temporary secret is generated and sessions are invalidated on restart.
+* __AUTH_SESSION_TTL__: Session lifetime in seconds. Defaults to `2592000` (30 days).
+
+When `ENABLE_AUTH=true`:
+* The first startup must provide `AUTH_ADMIN_USERNAME` and `AUTH_ADMIN_PASSWORD`.
+* The admin user can create and delete additional users from the UI.
+* The admin user can change any user's password from the UI.
+* Each user can change their own password from the UI.
+* Password changes invalidate existing sessions for that user; users must log in again with the new password.
+* `AUTH_ADMIN_USERNAME` and `AUTH_ADMIN_PASSWORD` are bootstrap-only. After `AUTH_USERS_FILE` already has users, changing these values does not overwrite existing passwords.
+* When deleting a user in the UI, the admin can choose whether to delete that user's download files as well.
+* Each user gets isolated queue/history state under `STATE_DIR/users/<username>`.
+* Each user gets isolated download folders under `DOWNLOAD_DIR/<username>` and `AUDIO_DOWNLOAD_DIR/<username>`.
+
+Example:
+
+```yaml
+services:
+  metube:
+    environment:
+      - ENABLE_AUTH=true
+      - AUTH_ADMIN_USERNAME=admin
+      - AUTH_ADMIN_PASSWORD=change-this-password
+      - AUTH_SESSION_SECRET=replace-with-a-long-random-string
+```
+
 The project's Wiki contains examples of useful configurations contributed by users of MeTube:
 * [YTDL_OPTIONS Cookbook](https://github.com/alexta69/metube/wiki/YTDL_OPTIONS-Cookbook)
 * [OUTPUT_TEMPLATE Cookbook](https://github.com/alexta69/metube/wiki/OUTPUT_TEMPLATE-Cookbook)
@@ -184,7 +216,7 @@ services:
       - KEYFILE=/ssl/key.pem
 ```
 
-It's also possible to run MeTube behind a reverse proxy, in order to support authentication. HTTPS support can also be added in this way.
+It's also possible to run MeTube behind a reverse proxy for HTTPS and external authentication. HTTPS support can also be added in this way.
 
 When running behind a reverse proxy which remaps the URL (i.e. serves MeTube under a subdirectory and not under root), don't forget to set the URL_PREFIX environment variable to the correct value.
 
